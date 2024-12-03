@@ -1,41 +1,46 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
 
+// Global variables to track alarm counts and start time
+int alarm_count = 0;
+time_t start_time;
 
-// Global variables to track the number of alarms and start time
-volatile sig_atomic_t alarmCount = 0;
-time_t startTime;
-
-void alarmHandler(int signum)
-{ //signal handler for SIGALRM
-  printf("Hello World!\n");
-  alarmCount++; // Increment the alarm count
-  alarm(1);     // Schedule the next alarm for 1 second
+// Signal handler for SIGALRM
+void handler(int signum) {
+    alarm_count++;  // Increment alarm count
+    alarm(1);  // Set the next alarm for 1 second
 }
 
-void intHandler(int signum)
-{ //signal handler for SIGINT (CTRL-C)
-  time_t endTime = time(NULL); // Get the current time when interrupted
-  printf("\nTuring was right!\n");
-  printf("Total alarms: %d\n", alarmCount);
-  printf("Total execution time: %ld seconds\n", endTime - startTime);
-  exit(0); // Exit the program
+// Signal handler for SIGINT (Ctrl-C)
+void sigint_handler(int signum) {
+    time_t end_time = time(NULL);  // Get current time
+    double elapsed_time = difftime(end_time, start_time);
+    
+    printf("\nProgram executed for %.0f seconds.\n", elapsed_time);
+    printf("Total alarms delivered: %d\n", alarm_count);
+    exit(0);  // Exit the program
 }
 
-int main(int argc, char *argv[])
-{
-  signal(SIGALRM, alarmHandler); // register handler to handle SIGALRM
-  signal(SIGINT, intHandler);    // register handler to handle SIGINT (CTRL-C)
-  
-  startTime = time(NULL); // Record the start time
-  alarm(1);               // Schedule the first alarm for 1 second
-  
-  // Infinite loop to keep the program running and responding to signals
-  while (1);
+// Main function
+int main() {
+    // Set up signal handlers
+    signal(SIGALRM, handler);
+    signal(SIGINT, sigint_handler);
 
-  return 0;
+    // Record start time
+    start_time = time(NULL);
+
+    // Start the first alarm
+    alarm(1);
+
+    // Wait indefinitely for signals
+    while (1) {
+        pause();  // Wait for signals
+    }
+
+    return 0;
 }
-
